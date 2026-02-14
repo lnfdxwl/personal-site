@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    body { background: white; margin: 20px; font-family: sans-serif; }
+    .mermaid { display: flex; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div class="mermaid">
+    graph LR
+      A["✈️ 内排机场<br>(04:15落地)"] -->|"Grab/包车"| B["📍 河内老城区"]
+      B -->|"D2 包车/团"| C["⛰️ 宁平<br>长安+杭母亚"]
+      C -->|"D2 晚返回"| B
+      B -->|"D3 上午<br>豪华巴士"| D["🚢 下龙湾<br>游轮过夜"]
+      D -->|"D4 下午<br>直通巴士"| A
+  </div>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  </script>
+</body>
+</html>
