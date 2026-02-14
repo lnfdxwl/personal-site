@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+logs/
+data/photos.db
+data/photos.db-shm
+data/photos.db-wal
+data/photos/thumbnails/*
+!data/photos/thumbnails/.gitkeep
+coverage/
+.DS_Store

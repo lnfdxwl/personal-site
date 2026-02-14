@@ -1,0 +1,37 @@
+{
+  "name": "lifeos-lite",
+  "version": "3.0.0",
+  "description": "个人生活管理系统 - 旅行攻略与照片库",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "node scripts/migrate.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": ["personal", "travel", "photos", "markdown"],
+  "author": "zzy (赵泽阳)",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "exif-parser": "^0.1.12",
+    "helmet": "^7.1.0",
+    "marked": "^11.1.1",
+    "sharp": "^0.33.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
