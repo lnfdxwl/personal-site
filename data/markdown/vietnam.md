@@ -3,6 +3,13 @@
 > **📄 飞书文档**: https://feishu.cn/docx/ReHedBOqQoSwHDxU1OtcTXxWnsc
 > **🔄 同步说明**: 本地修改后同步到服务器并更新飞书文档
 
+---
+
+**攻略同时更新到：**
+- 🌐 个人小站：http://localhost:8080/travel/vietnam
+- 📄 飞书文档：https://feishu.cn/docx/ReHedBOqQoSwHDxU1OtcTXxWnsc
+- 💻 GitHub：https://github.com/lnfdxwl/personal-site
+
 > **核心思路**：放弃特种兵的极限打卡，深度体验河内的千年历史和烟火气。利用凌晨抵达的优势，看河内日出；用一整天探索下龙湾，晚上返回河内市区。
 > **适用人群**：喜欢文化体验、美食探索、不想太累的旅行者（就是你！）。
 
