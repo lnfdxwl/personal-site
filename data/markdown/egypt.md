@@ -1,5 +1,15 @@
 # 🇪🇸 埃及四城深度游 · 穿越五千年文明 (10天9晚)
 
+> **📄 飞书文档**: https://feishu.cn/docx/STxSdLOtmohTyVxzanMclVNMnGb
+> **🔄 同步说明**: 本地修改后同步到服务器并更新飞书文档
+
+---
+
+**攻略同时更新到：**
+- 🌐 个人小站：http://localhost:8080/travel/egypt
+- 📄 飞书文档：https://feishu.cn/docx/STxSdLOtmohTyVxzanMclVNMnGb
+- 💻 GitHub：https://github.com/lnfdxwl/personal-site
+
 > **核心思路**：开罗-赫尔格达-卢克索-开罗经典环线，深度体验古埃及文明 + 红海度假 + 地中海风情。10天时间充裕不赶路，从容探索金字塔、神庙、红海潜水、热气球。
 > **适用人群**：历史文化爱好者、潜水爱好者、追求深度体验的旅行者（就是你们！）。
 
