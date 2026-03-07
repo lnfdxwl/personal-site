@@ -31,6 +31,12 @@ app.use(express.static(path.join(__dirname, '../public'), {
     etag: true
 }));
 
+// 静态图片服务 - 直接挂载
+app.use('/photos', express.static(path.join(__dirname, '../data/photos/library'), {
+    maxAge: '7d',
+    etag: true
+}));
+
 // 请求日志
 app.use(logger);
 

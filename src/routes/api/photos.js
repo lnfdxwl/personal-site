@@ -69,25 +69,4 @@ router.post('/sync', async (req, res, next) => {
     }
 });
 
-/**
- * 静态图片服务
- */
-router.get('/:year/:month/:filename', (req, res, next) => {
-    const { year, month, filename } = req.params;
-    const LIBRARY_DIR = path.join(__dirname, '../../../data/photos/library');
-    const filePath = path.join(LIBRARY_DIR, year, month, filename);
-
-    // 安全检查
-    const normalizedPath = path.normalize(filePath);
-    if (!normalizedPath.startsWith(LIBRARY_DIR)) {
-        return res.status(403).json({ error: '非法路径' });
-    }
-
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            next(err);
-        }
-    });
-});
-
 module.exports = router;

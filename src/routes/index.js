@@ -16,9 +16,6 @@ function registerRoutes(app) {
     // API路由
     app.use('/api/photos', photosApiRouter);
 
-    // 静态图片服务 (兼容旧路径)
-    app.use('/photos', photosApiRouter);
-
     // 404处理
     app.use((req, res) => {
         res.status(404).json({
