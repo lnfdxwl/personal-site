@@ -6,12 +6,14 @@ function registerRoutes(app) {
     const homeRouter = require('./home');
     const travelRouter = require('./travel');
     const galleryRouter = require('./gallery');
+    const brainRouter = require('./brain');
     const photosApiRouter = require('./api/photos');
 
     // 页面路由
     app.use('/', homeRouter);
     app.use('/travel', travelRouter);
     app.use('/gallery', galleryRouter);
+    app.use('/brain', brainRouter);
 
     // API路由
     app.use('/api/photos', photosApiRouter);
