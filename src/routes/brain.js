@@ -61,47 +61,182 @@ router.get('/api/memory', (req, res) => {
   }
 });
 
-// 获取本地 skills
+// 获取本地 skills 列表
 router.get('/api/skills', (req, res) => {
   try {
     const skills = [];
     
-    // 检查本地 skills 目录
     if (fs.existsSync(LOCAL_SKILLS_PATH)) {
       const items = fs.readdirSync(LOCAL_SKILLS_PATH, { withFileTypes: true });
       
       for (const item of items) {
-        // 支持 .md 文件和目录两种形式
         if (item.isFile() && item.name.endsWith('.md')) {
           const filePath = path.join(LOCAL_SKILLS_PATH, item.name);
           const content = fs.readFileSync(filePath, 'utf-8');
+          const stat = fs.statSync(filePath);
+          
+          // 从内容提取标题和描述
+          const lines = content.split('\n');
+          let title = item.name.replace('.md', '');
+          let desc = '';
+          
+          for (const line of lines) {
+            if (line.startsWith('# ') && !title.includes('##')) {
+              title = line.replace('# ', '').trim();
+            } else if (line.trim() && !line.startsWith('#') && !desc) {
+              desc = line.trim();
+            }
+            if (title && desc) break;
+          }
           
           skills.push({
-            name: item.name.replace('.md', ''),
+            id: item.name.replace('.md', ''),
+            name: title,
+            description: desc || '暂无描述',
+            filename: item.name,
             path: filePath,
-            description: content.slice(0, 500) + (content.length > 500 ? '...' : ''),
-            fullDescription: content
+            size: stat.size,
+            mtime: stat.mtime
           });
         } else if (item.isDirectory()) {
           const skillPath = path.join(LOCAL_SKILLS_PATH, item.name);
           const skillMdPath = path.join(skillPath, 'SKILL.md');
+          const stat = fs.statSync(skillPath);
           
-          let description = '';
+          let content = '';
           if (fs.existsSync(skillMdPath)) {
-            description = fs.readFileSync(skillMdPath, 'utf-8');
+            content = fs.readFileSync(skillMdPath, 'utf-8');
           }
           
           skills.push({
+            id: item.name,
             name: item.name,
+            description: content.slice(0, 100) || '暂无描述',
+            filename: 'SKILL.md',
             path: skillPath,
-            description: description.slice(0, 500) + (description.length > 500 ? '...' : ''),
-            fullDescription: description
+            size: stat.size,
+            mtime: stat.mtime,
+            isDir: true
           });
         }
       }
     }
     
+    // 按修改时间倒序
+    skills.sort((a, b) => new Date(b.mtime) - new Date(a.mtime));
+    
     res.json({ success: true, skills, path: LOCAL_SKILLS_PATH });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// 获取单个技能详情
+router.get('/api/skills/:id', (req, res) => {
+  try {
+    let filePath = path.join(LOCAL_SKILLS_PATH, `${req.params.id}.md`);
+    let content = '';
+    let isDir = false;
+    
+    // 检查是文件还是目录
+    if (fs.existsSync(filePath)) {
+      content = fs.readFileSync(filePath, 'utf-8');
+    } else {
+      filePath = path.join(LOCAL_SKILLS_PATH, req.params.id, 'SKILL.md');
+      if (fs.existsSync(filePath)) {
+        content = fs.readFileSync(filePath, 'utf-8');
+        isDir = true;
+      }
+    }
+    
+    if (!content) {
+      return res.json({ success: false, error: '技能不存在' });
+    }
+    
+    const stat = fs.statSync(filePath);
+    
+    res.json({
+      success: true,
+      skill: {
+        id: req.params.id,
+        name: req.params.id,
+        content,
+        path: filePath,
+        size: stat.size,
+        mtime: stat.mtime,
+        isDir
+      }
+    });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// 新增技能
+router.post('/api/skills', express.json(), (req, res) => {
+  try {
+    const { name, content } = req.body;
+    
+    if (!name || !name.trim()) {
+      return res.json({ success: false, error: '技能名称不能为空' });
+    }
+    
+    // 安全检查：只允许字母、数字、下划线、横线
+    const safeName = name.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filePath = path.join(LOCAL_SKILLS_PATH, `${safeName}.md`);
+    
+    if (fs.existsSync(filePath)) {
+      return res.json({ success: false, error: '技能已存在' });
+    }
+    
+    const skillContent = content || `# ${name}\n\n描述这个技能...\n`;
+    fs.writeFileSync(filePath, skillContent, 'utf-8');
+    
+    res.json({ success: true, id: safeName, path: filePath });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// 更新技能
+router.put('/api/skills/:id', express.json(), (req, res) => {
+  try {
+    const { content } = req.body;
+    let filePath = path.join(LOCAL_SKILLS_PATH, `${req.params.id}.md`);
+    
+    if (!fs.existsSync(filePath)) {
+      filePath = path.join(LOCAL_SKILLS_PATH, req.params.id, 'SKILL.md');
+    }
+    
+    if (!fs.existsSync(filePath)) {
+      return res.json({ success: false, error: '技能不存在' });
+    }
+    
+    fs.writeFileSync(filePath, content, 'utf-8');
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// 删除技能
+router.delete('/api/skills/:id', (req, res) => {
+  try {
+    let filePath = path.join(LOCAL_SKILLS_PATH, `${req.params.id}.md`);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return res.json({ success: true });
+    }
+    
+    // 检查是否是目录
+    filePath = path.join(LOCAL_SKILLS_PATH, req.params.id);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+      fs.rmSync(filePath, { recursive: true });
+      return res.json({ success: true });
+    }
+    
+    res.json({ success: false, error: '技能不存在' });
   } catch (err) {
     res.json({ success: false, error: err.message });
   }
@@ -218,15 +353,72 @@ router.get('/', (req, res) => {
     .diary-date { font-weight: 600; color: #48dbfb; margin-bottom: 8px; }
     .diary-preview { font-size: 14px; color: #aaa; }
     
-    .skill-card {
+    .skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+    .skill-item {
       background: rgba(255,255,255,0.05);
       border-radius: 12px;
       padding: 20px;
-      margin-bottom: 15px;
-      border-left: 4px solid #feca57;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      gap: 15px;
     }
-    .skill-name { font-size: 18px; font-weight: 600; color: #feca57; margin-bottom: 10px; }
-    .skill-path { font-size: 12px; color: #666; margin-bottom: 10px; font-family: monospace; }
+    .skill-item:hover {
+      border-color: #feca57;
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-2px);
+    }
+    .skill-icon { font-size: 24px; }
+    .skill-info { flex: 1; }
+    .skill-name { font-weight: 600; color: #feca57; margin-bottom: 5px; }
+    .skill-desc { font-size: 13px; color: #aaa; margin-bottom: 8px; }
+    .skill-meta { font-size: 12px; color: #666; }
+    
+    .toolbar { margin-bottom: 20px; }
+    .btn-primary {
+      background: linear-gradient(90deg, #ff6b6b, #feca57);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn-primary:hover { transform: scale(1.05); }
+    .btn-small {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 12px;
+      border-radius: 6px;
+      color: #e0e0e0;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+    .btn-small:hover { background: rgba(255,255,255,0.2); }
+    .btn-danger { border-color: #ff6b6b; }
+    .btn-danger:hover { background: rgba(255,107,107,0.2); }
+    
+    .card-actions { display: flex; gap: 10px; }
+    .card-meta { font-size: 12px; color: #666; margin-bottom: 15px; font-family: monospace; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; color: #feca57; }
+    .input, .textarea {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      color: #e0e0e0;
+      font-size: 14px;
+    }
+    .input:focus, .textarea:focus {
+      outline: none;
+      border-color: #feca57;
+    }
+    .textarea { font-family: monospace; resize: vertical; }
     
     .identity-section {
       margin-bottom: 30px;
@@ -281,6 +473,9 @@ router.get('/', (req, res) => {
     </div>
     
     <div id="skills" class="panel">
+      <div class="toolbar">
+        <button class="btn-primary" onclick="showCreateSkill()">+ 新增技能</button>
+      </div>
       <div id="skills-list"><div class="loading">加载中...</div></div>
     </div>
     
@@ -357,17 +552,141 @@ router.get('/', (req, res) => {
       }
       
       if (data.skills.length === 0) {
-        el.innerHTML = '<div class="card">暂无本地技能</div>';
+        el.innerHTML = '<div class="card">暂无本地技能，点击上方按钮新增</div>';
         return;
       }
       
-      el.innerHTML = data.skills.map(s => \`
-        <div class="skill-card">
-          <div class="skill-name">🔧 \${s.name}</div>
-          <div class="skill-path">\${s.path}</div>
-          <div class="markdown-body">\${marked.parse(s.description || '暂无描述')}</div>
+      el.innerHTML = '<div class="skill-grid">' + data.skills.map(s => \`
+        <div class="skill-item" onclick="showSkillDetail('\${s.id}')">
+          <div class="skill-icon">🔧</div>
+          <div class="skill-info">
+            <div class="skill-name">\${s.name}</div>
+            <div class="skill-desc">\${s.description.slice(0, 50)}\${s.description.length > 50 ? '...' : ''}</div>
+            <div class="skill-meta">更新于 \${new Date(s.mtime).toLocaleDateString()}</div>
+          </div>
         </div>
-      \`).join('');
+      \`).join('') + '</div>';
+    }
+    
+    async function showSkillDetail(id) {
+      const res = await fetch('/brain/api/skills/' + id);
+      const data = await res.json();
+      const el = document.getElementById('skills-list');
+      
+      if (!data.success) {
+        el.innerHTML = '<div class="card">加载失败: ' + data.error + '</div>';
+        return;
+      }
+      
+      const s = data.skill;
+      el.innerHTML = \`
+        <a href="#" class="back-link" onclick="loadSkills(); return false;">← 返回技能列表</a>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔧 \${s.name}</div>
+            <div class="card-actions">
+              <button class="btn-small" onclick="editSkill('\${s.id}')">✏️ 编辑</button>
+              <button class="btn-small btn-danger" onclick="deleteSkill('\${s.id}')">🗑️ 删除</button>
+            </div>
+          </div>
+          <div class="card-meta">路径: \${s.path}</div>
+          <div class="markdown-body">\${marked.parse(s.content)}</div>
+        </div>
+      \`;
+    }
+    
+    function showCreateSkill() {
+      const el = document.getElementById('skills-list');
+      el.innerHTML = \`
+        <a href="#" class="back-link" onclick="loadSkills(); return false;">← 返回技能列表</a>
+        <div class="card">
+          <div class="card-title">新增技能</div>
+          <div class="form-group">
+            <label>技能名称</label>
+            <input type="text" id="skill-name" placeholder="例如: my_search" class="input">
+          </div>
+          <div class="form-group">
+            <label>内容 (Markdown)</label>
+            <textarea id="skill-content" class="textarea" rows="15" placeholder="# 技能名称&#10;&#10;描述这个技能的用途..."></textarea>
+          </div>
+          <button class="btn-primary" onclick="createSkill()">创建</button>
+        </div>
+      \`;
+    }
+    
+    async function createSkill() {
+      const name = document.getElementById('skill-name').value.trim();
+      const content = document.getElementById('skill-content').value;
+      
+      if (!name) {
+        alert('请输入技能名称');
+        return;
+      }
+      
+      const res = await fetch('/brain/api/skills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, content })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        showSkillDetail(data.id);
+      } else {
+        alert('创建失败: ' + data.error);
+      }
+    }
+    
+    async function editSkill(id) {
+      const res = await fetch('/brain/api/skills/' + id);
+      const data = await res.json();
+      const el = document.getElementById('skills-list');
+      
+      if (!data.success) {
+        alert('加载失败');
+        return;
+      }
+      
+      el.innerHTML = \`
+        <a href="#" class="back-link" onclick="showSkillDetail('\${id}'); return false;">← 取消</a>
+        <div class="card">
+          <div class="card-title">编辑技能: \${id}</div>
+          <textarea id="skill-edit-content" class="textarea" rows="20">\${data.skill.content}</textarea>
+          <button class="btn-primary" onclick="saveSkill('\${id}')">保存</button>
+        </div>
+      \`;
+    }
+    
+    async function saveSkill(id) {
+      const content = document.getElementById('skill-edit-content').value;
+      
+      const res = await fetch('/brain/api/skills/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        showSkillDetail(id);
+      } else {
+        alert('保存失败: ' + data.error);
+      }
+    }
+    
+    async function deleteSkill(id) {
+      if (!confirm('确定要删除技能 "' + id + '" 吗？此操作不可恢复！')) {
+        return;
+      }
+      
+      const res = await fetch('/brain/api/skills/' + id, { method: 'DELETE' });
+      const data = await res.json();
+      
+      if (data.success) {
+        loadSkills();
+      } else {
+        alert('删除失败: ' + data.error);
+      }
     }
     
     async function loadIdentity() {
