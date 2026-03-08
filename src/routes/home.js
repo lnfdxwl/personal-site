@@ -66,6 +66,14 @@ router.get('/', async (req, res, next) => {
                     <div class="highlight-number">1</div>
                     <p style="color: #5a6c7d; margin: 0;">篇游记</p>
                 </div>
+                <div class="stats-card" onclick="location.href='/brain'" style="cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0;">🐱 棉子</h3>
+                        <span style="font-size: 2rem; opacity: 0.3;">🧠</span>
+                    </div>
+                    <div class="highlight-number">AI</div>
+                    <p style="color: #5a6c7d; margin: 0;">的脑子</p>
+                </div>
             </div>
 
             ${recentPhotos.length > 0 ? `
