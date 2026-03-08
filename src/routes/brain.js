@@ -68,24 +68,36 @@ router.get('/api/skills', (req, res) => {
     
     // 检查本地 skills 目录
     if (fs.existsSync(LOCAL_SKILLS_PATH)) {
-      const dirs = fs.readdirSync(LOCAL_SKILLS_PATH, { withFileTypes: true })
-        .filter(d => d.isDirectory());
+      const items = fs.readdirSync(LOCAL_SKILLS_PATH, { withFileTypes: true });
       
-      for (const dir of dirs) {
-        const skillPath = path.join(LOCAL_SKILLS_PATH, dir.name);
-        const skillMdPath = path.join(skillPath, 'SKILL.md');
-        
-        let description = '';
-        if (fs.existsSync(skillMdPath)) {
-          description = fs.readFileSync(skillMdPath, 'utf-8');
+      for (const item of items) {
+        // 支持 .md 文件和目录两种形式
+        if (item.isFile() && item.name.endsWith('.md')) {
+          const filePath = path.join(LOCAL_SKILLS_PATH, item.name);
+          const content = fs.readFileSync(filePath, 'utf-8');
+          
+          skills.push({
+            name: item.name.replace('.md', ''),
+            path: filePath,
+            description: content.slice(0, 500) + (content.length > 500 ? '...' : ''),
+            fullDescription: content
+          });
+        } else if (item.isDirectory()) {
+          const skillPath = path.join(LOCAL_SKILLS_PATH, item.name);
+          const skillMdPath = path.join(skillPath, 'SKILL.md');
+          
+          let description = '';
+          if (fs.existsSync(skillMdPath)) {
+            description = fs.readFileSync(skillMdPath, 'utf-8');
+          }
+          
+          skills.push({
+            name: item.name,
+            path: skillPath,
+            description: description.slice(0, 500) + (description.length > 500 ? '...' : ''),
+            fullDescription: description
+          });
         }
-        
-        skills.push({
-          name: dir.name,
-          path: skillPath,
-          description: description.slice(0, 500) + (description.length > 500 ? '...' : ''),
-          fullDescription: description
-        });
       }
     }
     
